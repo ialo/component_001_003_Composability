@@ -49,4 +49,21 @@ class Utils {
     print('random direction vector $result');
     return result * velocity;
   }
+
+  /// Check if the given [position] is out of bounds of the passed in
+  /// [bounds] object usually represneting a screen size or some bounding
+  /// area
+  ///
+  static bool isPositionOutOfBounds(Vector2 bounds, Vector2 position) {
+    bool result = false;
+
+    if (position.x >= bounds.x ||
+        position.x <= 0 ||
+        position.y <= 0 ||
+        position.y >= bounds.y) {
+      result = true;
+    }
+
+    return result;
+  }
 }

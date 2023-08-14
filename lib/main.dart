@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:component_001/LifeBar.dart';
 import 'package:component_001/utils.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -20,7 +21,7 @@ void main() {
 //
 //
 // Simple component shape example of a square component
-class Square extends PositionComponent {
+class Square extends PositionComponent with HasGameRef {
   // default values
   //
   var velocity = Vector2(0, 25);
@@ -33,6 +34,8 @@ class Square extends PositionComponent {
   List<RectangleComponent> lifeBarElements = List<RectangleComponent>.filled(
       3, RectangleComponent(size: Vector2(1, 1)),
       growable: false);
+
+  late LifeBar lifeBar;
 
   @override
   Future<void> onLoad() async {
@@ -68,56 +71,34 @@ class Square extends PositionComponent {
     //     (lifeBarElements[0].angle - angleDelta * 3) % (2 * pi);
     // lifeBarElements[2].angle =
     //     (lifeBarElements[0].angle - angleDelta * 3) % (2 * pi);
+
+    /// check if the object is out of bounds
+    ///
+    /// if it is out-of-bounds then remove it from the game engine
+    /// note the usage of gameRef to get access to the game engine
+    if (Utils.isPositionOutOfBounds(gameRef.size, position)) {
+      gameRef.remove(this);
+    }
+    if (lifeBar.currentLife <= 0) {
+      gameRef.remove(this);
+    }
   }
 
   //
   //
   // Create a rudimentary lifebar shape
   createLifeBar() {
-    var lifeBarSize = Vector2(40, 10);
-    var backgroundFillColor = Paint()
-      ..color = Colors.grey.withOpacity(0.35)
-      ..style = PaintingStyle.fill;
-    var outlineColor = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    var lifeDangerColor = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
-
-    // All positions here are in relation to the parent's position
-    lifeBarElements = [
-      //
-      // The outline of the life bar
-      RectangleComponent(
-        position: Vector2(size.x - lifeBarSize.x, -lifeBarSize.y - 2),
-        size: lifeBarSize,
-        angle: 0,
-        paint: outlineColor,
-      ),
-
-      //
-      // The fill portion of the bar. The semi-transparent portion
-      RectangleComponent(
-        position: Vector2(size.x - lifeBarSize.x, -lifeBarSize.y - 2),
-        size: lifeBarSize,
-        angle: 0,
-        paint: backgroundFillColor,
-      ),
-      //
-      // The actual life percentage as a fill of red or green
-      RectangleComponent(
-        position: Vector2(size.x - lifeBarSize.x, -lifeBarSize.y - 2),
-        size: Vector2(10, 10),
-        angle: 0,
-        paint: lifeDangerColor,
-      ),
-    ];
-
+    lifeBar = LifeBar.initData(size,
+        size: Vector2(size.x - 10, 5), placement: LifeBarPlacement.center);
     //
-    // add all lifebar elements to the children of the Square instance
-    addAll(lifeBarElements);
+    // add all lifebar element to the children of the Square instance
+    add(lifeBar);
+  }
+
+  /// Method for communicating life state information to the class object
+  ///
+  processHit() {
+    lifeBar.decrementCurrentLifeBy(10);
   }
 }
 
@@ -167,8 +148,9 @@ class ComponentExample001 extends FlameGame
     // and if so remove the shape from the screen
     final handled = children.any((component) {
       if (component is Square && component.containsPoint(touchPoint)) {
-        remove(component);
-        // component.velocity.negate();
+        // remove(component);
+        component.processHit();
+        component.velocity.negate();
         return true;
       }
       return false;
@@ -177,7 +159,7 @@ class ComponentExample001 extends FlameGame
     //
     // this is a clean location with no shapes
     // create and add a new shape to the component tree under the FlameGame
-    if (!handled) {
+    if (!handled && children.isEmpty) {
       add(Square()
         ..position = Utils.generateRandomPosition(size, margins)
         ..squareSize = 45.0
