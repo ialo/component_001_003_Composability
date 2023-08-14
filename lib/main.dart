@@ -1,9 +1,11 @@
 import 'dart:math';
 
+import 'package:component_001/utils.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
+import 'package:flame/palette.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -56,9 +58,16 @@ class Square extends PositionComponent {
     super.update(dt);
     // speed is refresh frequency independent
     position += velocity * dt;
+
     // add rotational speed update as well
     var angleDelta = dt * rotationSpeed;
     angle = (angle + angleDelta) % (2 * pi);
+    // lifeBarElements[0].angle =
+    //     (lifeBarElements[0].angle - angleDelta * 3) % (2 * pi);
+    // lifeBarElements[1].angle =
+    //     (lifeBarElements[0].angle - angleDelta * 3) % (2 * pi);
+    // lifeBarElements[2].angle =
+    //     (lifeBarElements[0].angle - angleDelta * 3) % (2 * pi);
   }
 
   //
@@ -87,6 +96,7 @@ class Square extends PositionComponent {
         angle: 0,
         paint: outlineColor,
       ),
+
       //
       // The fill portion of the bar. The semi-transparent portion
       RectangleComponent(
@@ -128,6 +138,7 @@ class ComponentExample001 extends FlameGame
   //
   // controls if the engine is paused or not
   bool running = true;
+  Vector2 margins = Vector2(15, 15);
   @override
   // runnig in debug mode
   bool debugMode = false;
@@ -135,8 +146,8 @@ class ComponentExample001 extends FlameGame
   // text rendering const
   final TextPaint textPaint = TextPaint(
     style: const TextStyle(
-      fontSize: 14.0,
-      fontFamily: 'Awesome Font',
+      fontSize: 24.0,
+      // fontFamily: 'Awesome Font',
     ),
   );
 
@@ -156,8 +167,8 @@ class ComponentExample001 extends FlameGame
     // and if so remove the shape from the screen
     final handled = children.any((component) {
       if (component is Square && component.containsPoint(touchPoint)) {
-        // remove(component);
-        component.velocity.negate();
+        remove(component);
+        // component.velocity.negate();
         return true;
       }
       return false;
@@ -168,11 +179,10 @@ class ComponentExample001 extends FlameGame
     // create and add a new shape to the component tree under the FlameGame
     if (!handled) {
       add(Square()
-        ..position = touchPoint
+        ..position = Utils.generateRandomPosition(size, margins)
         ..squareSize = 45.0
-        ..velocity = Vector2(0, 1).normalized() * 25
-        ..color = (Paint()
-          ..color = Colors.red
+        ..velocity = Utils.generateRandomVelocity(size, 25, 100)
+        ..color = (BasicPalette.red.paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2));
     }
@@ -192,7 +202,7 @@ class ComponentExample001 extends FlameGame
   @override
   void render(Canvas canvas) {
     textPaint.render(
-        canvas, "objects active: ${children.length}", Vector2(10, 20));
+        canvas, "objects active: ${children.length}", Vector2(10, 40));
     super.render(canvas);
   }
 }
